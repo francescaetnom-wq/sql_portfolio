@@ -1,4 +1,4 @@
----
+--- subqueries
 SELECT first_name, last_name
 FROM bigquery-public-data.thelook_ecommerce.users
 WHERE id IN (
@@ -7,7 +7,7 @@ WHERE id IN (
   WHERE status = 'Returned'
 );
 
-----
+---- case when + subqueries
 SELECT first_name, last_name,
 CASE
 WHEN age < 20 THEN 'Young'
@@ -24,7 +24,7 @@ WHERE id IN (
 ORDER BY age DESC
 LIMIT 1000;
 
-----
+---- subq + having and group by
 SELECT country, AVG(total_orders) AS media_ordini
 FROM (
     SELECT u.country, COUNT(o.order_id) AS total_orders
@@ -36,7 +36,7 @@ GROUP BY country
 HAVING AVG(total_orders) > 3
 ORDER BY media_ordini DESC;
 
-----
+---- case when + group by
 SELECT 
 CASE 
  WHEN num_of_item = 1 THEN 'Small'
@@ -48,7 +48,7 @@ FROM bigquery-public-data.thelook_ecommerce.orders
 GROUP BY segment
 ORDER BY total_orders DESC;
 
-----
+---- subquery
 SELECT country, first_name, last_name
 FROM bigquery-public-data.thelook_ecommerce.users
 WHERE id IN 
@@ -57,7 +57,7 @@ FROM bigquery-public-data.thelook_ecommerce.orders
 WHERE status = 'Cancelled')
 ORDER BY country; 
 
-----
+---- count distinct + case when + group by
 SELECT country,
 COUNT(DISTINCT id) AS user_total,
 COUNT(DISTINCT CASE WHEN gender= 'F' THEN id END) AS female_total,
@@ -66,7 +66,7 @@ FROM bigquery-public-data.thelook_ecommerce.users
 GROUP BY country
 ORDER BY user_total DESC;
 
-----
+---- case when and group by
 SELECT 
 CASE WHEN age < 25 THEN 'Under 25'
 WHEN age BETWEEN 25 AND 40 THEN 'Middle age'
@@ -77,27 +77,27 @@ FROM bigquery-public-data.thelook_ecommerce.users
 GROUP BY age_group
 ORDER BY total_users DESC; 
 
-----
+---- basic functions
 SELECT CONCAT(first_name,' ', last_name) AS full_name,
 LOWER(email) AS email_lowered,
 DATE_DIFF(CURRENT_DATE(), DATE(created_at), DAY) AS days_from_subs
 FROM `bigquery-public-data.thelook_ecommerce.users`;
 
 
----
+--- functions + count and group by
 SELECT 
 DATE_TRUNC(DATE(created_at),MONTH) AS month,
 COUNT(order_id) AS num_order_per_month
 FROM bigquery-public-data.thelook_ecommerce.orders
 GROUP BY month ORDER BY month ASC;
 
-----
+---- date_sub
 SELECT *
 FROM `bigquery-public-data.thelook_ecommerce.orders`
 WHERE DATE(created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 YEAR);
 
 
-----
+---- extract + count + group by 
 SELECT 
 EXTRACT (DAYOFWEEK FROM created_at) AS day_of_week,
 COUNT(order_id) AS total_orders
@@ -105,7 +105,7 @@ FROM bigquery-public-data.thelook_ecommerce.orders
 GROUP BY day_of_week
 ORDER BY total_orders DESC;
 
-----
+---- case when 
 SELECT order_id, num_of_item, 
 CASE WHEN num_of_item = 1 THEN 'Small'
 WHEN num_of_item BETWEEN 2 AND 3 THEN 'Medium'
@@ -113,7 +113,8 @@ WHEN num_of_item >= 4 THEN 'Large'
 END AS order_size
 FROM bigquery-public-data.thelook_ecommerce.orders
 LIMIT 50;
-----
+
+---- count + case when + group by 
  SELECT
     country,
     COUNT(*) AS total_utenti,
@@ -123,7 +124,8 @@ FROM `bigquery-public-data.thelook_ecommerce.users`
 GROUP BY country
 ORDER BY total_utenti DESC
 LIMIT 10;
-----
+
+----case when + count + group by
 SELECT 
 CASE WHEN status IN ('Complete', 'Shipped') THEN 'Positive'
 WHEN status IN ('Cancelled', 'Returned' ) THEN 'Negative'
@@ -134,7 +136,7 @@ FROM bigquery-public-data.thelook_ecommerce.orders
 GROUP BY status_category
 ORDER BY total_orders desc;
 
-----
+---- basic functions
 SELECT CONCAT(first_name, ' ' , last_name) AS full_name,
 country,
 DATE_DIFF(CURRENT_DATE(),DATE(created_at),DAY) AS days_from_registration
@@ -142,7 +144,7 @@ FROM bigquery-public-data.thelook_ecommerce.users
 WHERE EXTRACT(YEAR FROM created_at) = 2022
 ORDER BY days_from_registration ASC;
 
-----
+---- basic functions
 SELECT 
     DATE_TRUNC(DATE(created_at), MONTH) AS month,
     COUNT(*) AS total_registrations
@@ -151,7 +153,7 @@ WHERE EXTRACT(YEAR FROM created_at) = 2022
 GROUP BY month
 ORDER BY month;
 
-----es case when + count 
+---- case when + count + group by
 SELECT
     status,
     COUNT(*) AS total_orders,
@@ -161,7 +163,7 @@ FROM `bigquery-public-data.thelook_ecommerce.orders`
 GROUP BY status
 ORDER BY total_orders DESC;
 
-----CTE1
+----cte 
 WITH order_status AS (
   SELECT user_id 
   FROM bigquery-public-data.thelook_ecommerce.orders 
@@ -171,7 +173,7 @@ SELECT first_name, country
 FROM bigquery-public-data.thelook_ecommerce.users
 WHERE id IN (SELECT user_id FROM order_status);
 
----- CTE 2
+---- CTE + join and group by
 WITH tot_order_per_user AS(
   SELECT user_id, COUNT(order_id) AS total_orders
   FROM `bigquery-public-data.thelook_ecommerce.orders`
@@ -184,7 +186,7 @@ ON u.id = t.user_id
 WHERE total_orders > 2
 ORDER BY t.total_orders DESC;
 
-----CTE PER 2
+----multiple cte + join 
 WITH users_from_china AS(
   SELECT id 
   FROM bigquery-public-data.thelook_ecommerce.users
@@ -201,7 +203,7 @@ INNER JOIN orders_complete AS o ON u.id = o.user_id
 WHERE u.id IN (SELECT id FROM users_from_china)
 LIMIT 50;
 
-----cte multiple + group by 
+---- multiple cte + left join and group by 
 WITH stats_per_country AS (
     SELECT
         u.country,
@@ -240,7 +242,7 @@ SELECT order_id, user_id, num_of_item,
     FROM bigquery-public-data.thelook_ecommerce.orders
 LIMIT 50;
 
-----w3 dense_rank
+----WINDOW FUNCTION 3 dense_rank
 
 SELECT first_name, country, age, DENSE_RANK() OVER (PARTITION BY country ORDER BY age DESC) AS rank
 FROM bigquery-public-data.thelook_ecommerce.users
@@ -248,7 +250,7 @@ ORDER BY country, rank
 LIMIT 100;
 
 
----W5 + cte + window function
+---- cte + join + window function
 WITH
   country_orders AS (
     SELECT u.country, COUNT(o.order_id) AS total_orders
